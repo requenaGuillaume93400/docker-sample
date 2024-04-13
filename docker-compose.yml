@@ -1,0 +1,49 @@
+version: "3.7"
+services:
+  php8-sf6:
+    container_name: php8-sf6
+    # build c'est si j'ai une image custom
+    # build: php8-sf6
+    # image c'est pour une image classique deja existante et connue
+    image: php:8.2
+    ports:
+      - "9000:8000"
+    volumes:
+      - ./project:/var/www/html
+    # Spécifiez une commande ou un point d'entrée pour démarrer votre application PHP
+    command: php -S 0.0.0.0:8000 -t /var/www/html
+
+  mailer:
+    container_name: mailer
+    image: schickling/mailcatcher
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+
+  database:
+    container_name: database
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_PASSWORD: ChangeMe
+      POSTGRES_USER: symfony
+    volumes:
+      - db-data:/var/lib/postgresql/data:rw
+    ports:
+      - "5432"
+
+  adminer:
+    container_name: adminer
+    image: adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+    # Adminer essaie de se connecter trop tôt, avant que le conteneur de la base de données ne soit pleinement démarré et accessible.
+    # En ajoutant links: - database:db à la configuration du service Adminer, vous permettez à Adminer de résoudre le nom d'hôte "db"
+    # en utilisant l'alias "db" associé au conteneur de la base de données
+    links:
+      - database:db
+
+volumes:
+  db-data:
